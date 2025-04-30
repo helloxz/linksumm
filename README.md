@@ -41,7 +41,7 @@ services:
 
 ## 使用
 
-Transmute配置文件位于挂载目录下的`config/config.json`，使用标准的json格式：
+LinkSumm配置文件位于挂载目录下的`config/config.json`，使用标准的json格式：
 
 ```json
 {
