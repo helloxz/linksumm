@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # 安装依赖
 install_deps(){

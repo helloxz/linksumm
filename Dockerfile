@@ -10,4 +10,4 @@ RUN sh install.sh
 EXPOSE 2083
 VOLUME /opt/linksumm/app/data
 # 启动命令
-CMD ["sh", "run.sh"]
+CMD ["bash", "run.sh"]
