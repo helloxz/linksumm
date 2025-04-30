@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Link Summarizer</title>
+    <meta name="description" content="Enter a URL to get its content summarized by AI.">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        #app {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            color: #409EFF;
+            margin-bottom: 5px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .header .icon {
+            font-size: 1.5em;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .header p {
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+        .input-section {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .input-row .el-input {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+        .input-row .el-select {
+            width: 150px;
+        }
+        .input-row .el-button {
+            width: auto;
+        }
+        .result-section {
+            margin-top: 30px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            min-height: 100px;
+            word-wrap: break-word;
+        }
+        .result-section h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            color: #303133;
+            border-bottom: 1px solid #ebeef5;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .result-section h3 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #606266;
+            margin-bottom: 10px;
+        }
+        #summary-output {
+            color: #333;
+        }
+        #summary-output h1, #summary-output h2, #summary-output h3, #summary-output h4 {
+            margin-top: 1.2em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+        }
+        #summary-output h1 { font-size: 1.8em; }
+        #summary-output h2 { font-size: 1.6em; }
+        #summary-output h3 { font-size: 1.4em; }
+        #summary-output p {
+            margin-bottom: 1em;
+        }
+        #summary-output ul, #summary-output ol {
+            padding-left: 2em;
+            margin-bottom: 1em;
+        }
+        #summary-output li {
+            margin-bottom: 0.5em;
+        }
+        #summary-output code {
+            background-color: #f1f1f1;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        }
+        #summary-output pre {
+            background-color: #f6f8fa;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        #summary-output pre code {
+            background-color: transparent;
+            padding: 0;
+            font-size: inherit;
+        }
+        #summary-output blockquote {
+            border-left: 4px solid #dfe2e5;
+            padding-left: 1em;
+            color: #6a737d;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 1em;
+        }
+        #summary-output img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+        #summary-output a {
+            color: #409EFF;
+            text-decoration: none;
+        }
+        #summary-output a:hover {
+            text-decoration: underline;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 40px 0;
+            color: #409EFF;
+        }
+        .loading-spinner i {
+            font-size: 2.5em;
+        }
+        .loading-spinner p {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #909399;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        .footer a {
+            color: #409EFF;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            #app {
+                margin: 10px;
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-row .el-select {
+                width: 100%;
+            }
+            .input-row .el-button {
+                width: 100%;
+            }
+            .result-section {
+                padding: 15px;
+            }
+        }
+        /* Enhancements for select and submit button */
+        .el-select {
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .el-select:hover {
+            border-color: #409EFF;
+        }
+        .el-button {
+            border-radius: 5px;
+            background-color: #409EFF;
+            border-color: #409EFF;
+            transition: all 0.3s ease;
+        }
+        .el-button:hover {
+            background-color: #66b1ff;
+            border-color: #66b1ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1><span class="icon">🔗</span> LinkSumm</h1>
+            <p>输入一个URL地址，让AI为您总结内容。</p>
+        </div>
+        <div class="input-section">
+            <el-alert
+                v-if="errorMessage"
+                :title="errorMessage"
+                type="error"
+                show-icon
+                :closable="false"
+                style="margin-bottom: 20px;">
+            </el-alert>
+            <div class="input-row">
+                <el-input
+                    placeholder="Enter URL here (e.g., https://example.com/article)"
+                    v-model.trim="urlInput"
+                    clearable
+                    @keyup.enter.native="startSummarization"
+                    :disabled="isLoading">
+                    <template slot="prepend">URL</template>
+                </el-input>
+                <el-select
+                    v-model="selectedModel"
+                    placeholder="Select Model"
+                    :disabled="isLoading"
+                    size="medium">
+                    <el-option v-if="models.length === 0" label="Loading models..." value="" disabled></el-option>
+                    <el-option label="Auto Select" value="auto"></el-option>
+                    <el-option
+                        v-for="model in models"
+                        :key="model.model"
+                        :label="model.name"
+                        :value="model.model">
+                    </el-option>
+                </el-select>
+                <el-button
+                    type="primary"
+                    @click="startSummarization"
+                    :loading="isLoading"
+                    :disabled="!urlInput || isLoading"
+                    icon="el-icon-search"
+                    size="medium">开始总结
+                </el-button>
+            </div>
+        </div>
+        <div v-if="outputContent != ''" class="result-section">
+            <h2>标题: ${ originalTitle }</h2>
+            <h3>总结:</h3>
+            <div id="summary-output" v-html="outputContent"></div>
+        </div>
+        <div class="footer">
+            <p>&copy; Link Summarizer. All Rights Reserved.</p>
+            <p>Powered by Vue, Element UI, and AI</p>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        new Vue({
+            delimiters: ['${', '}'],
+            el: '#app',
+            data() {
+                return {
+                    urlInput: '',
+                    selectedModel: 'auto',
+                    models: [],
+                    isLoading: false,
+                    loadingStatus: '',
+                    originalTitle: '测试',
+                    originalContent: '',
+                    summaryContent: '',
+                    errorMessage: '',
+                    outputContent: ""
+                }
+            },
+            computed: {
+                renderedSummary() {
+                    if (this.summaryContent) {
+                        marked.setOptions({
+                            gfm: true,
+                            breaks: false,
+                            pedantic: false,
+                            smartLists: true,
+                            smartypants: false
+                        });
+                        return marked.parse(this.summaryContent);
+                    }
+                    return '';
+                }
+            },
+            methods: {
+                async fetchModels() {
+                    try {
+                        const response = await axios.get('/api/get/models');
+                        if (response.data && response.data.code === 200) {
+                            this.models = response.data.data;
+                        } else {
+                            this.errorMessage = 'Failed to load AI models.';
+                            console.error("Error fetching models:", response.data);
+                        }
+                    } catch (error) {
+                        this.errorMessage = 'Error fetching AI models list.';
+                        console.error('Error fetching models:', error);
+                    }
+                },
+                async startSummarization() {
+                    if (!this.urlInput || this.isLoading) {
+                        return;
+                    }
+                    if (!this.urlInput.startsWith('http://') && !this.urlInput.startsWith('https://')) {
+                        this.errorMessage = 'Please enter a valid URL starting with http:// or https://';
+                        return;
+                    }
+                    this.isLoading = true;
+                    this.errorMessage = '';
+                    this.summaryContent = '';
+                    this.originalTitle = '';
+                    this.originalContent = '';
+                    this.loadingStatus = 'Fetching content from URL...';
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('url', this.urlInput);
+                        const contentResponse = await axios.post('/api/get/content', formData);
+                        if (contentResponse.data && contentResponse.data.code === 200) {
+                            this.originalTitle = contentResponse.data.data.title;
+                            this.originalContent = contentResponse.data.data.content;
+                            if (!this.originalContent || this.originalContent === "No content could be extracted" || this.originalContent === "Error extracting content") {
+                                this.errorMessage = `Could not extract readable content from the URL. (${this.originalContent})`;
+                                this.isLoading = false;
+                                return;
+                            }
+                            this.loadingStatus = 'Summarizing content...';
+                            await this.fetchSummaryStream(this.originalContent);
+                        } else {
+                            throw new Error(contentResponse.data.msg || 'Failed to fetch content.');
+                        }
+                    } catch (error) {
+                        console.error('Summarization process failed:', error);
+                        this.errorMessage = `Error: ${error.message || 'An unknown error occurred.'}`;
+                        this.isLoading = false;
+                        this.loadingStatus = '';
+                    }
+                },
+                async fetchSummaryStream(contentToSummarize) {
+                    const payload = {
+                        model: this.selectedModel,
+                        input: contentToSummarize
+                    };
+                    try {
+                        const response = await fetch('/api/summ', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+                        if (!response.ok) {
+                            let errorMsg = `Network response was not ok (Status: ${response.status})`;
+                            try {
+                                const errData = await response.json();
+                                errorMsg = errData.msg || errData.detail || errorMsg;
+                            } catch(e) { }
+                            throw new Error(errorMsg);
+                        }
+                        const contentType = response.headers.get('Content-Type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const jsonData = await response.json();
+                            if (jsonData.code !== 200) {
+                                throw new Error(jsonData.msg || 'Received an error response from the summary API.');
+                            }
+                            console.warn("Received unexpected JSON response from streaming endpoint:", jsonData);
+                            this.isLoading = false;
+                            return;
+                        }
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let buffer = '';
+                        this.summaryContent = '';
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                break;
+                            }
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            for (const line of lines) {
+                                if (line.trim() === '' || !line.startsWith('data:')) continue;
+                                if (line.includes('[DONE]')) {
+                                    await new Promise(resolve => setTimeout(resolve, 50));
+                                    break;
+                                }
+                                try {
+                                    const jsonStr = line.substring(5).trim();
+                                    const data = JSON.parse(jsonStr);
+                                    if (data.value !== undefined) {
+                                        this.summaryContent += data.value;
+                                        this.outputContent = marked.parse(this.summaryContent);
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to parse stream data line:', line, e);
+                                }
+                            }
+                            if (lines.some(line => line.includes('[DONE]'))) {
+                                let url = this.urlInput;
+                                this.outputContent = marked.parse(this.summaryContent + `
+> 原文来自：[${url}](${url})`);
+                                break;
+                             }
+                        }
+                        this.isLoading = false;
+                        this.loadingStatus = '';
+                    } catch (error) {
+                        console.error('Failed to fetch or process summary stream:', error);
+                        this.errorMessage = `Error during summarization: ${error.message}`;
+                        this.isLoading = false;
+                        this.loadingStatus = '';
+                        this.summaryContent = '';
+                    }
+                }
+            },
+            mounted() {
+                this.fetchModels();
+            }
+        });
+    </script>
+</body>
+</html>

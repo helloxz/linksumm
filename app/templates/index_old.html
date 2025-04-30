@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmute - 智能翻译</title>
+    <!-- 引入Element UI的CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入字体图标 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #409EFF;
+            --secondary-color: #67C23A;
+            --dark-bg: #f5f7fa;
+            --light-text: #303133;
+            --border-radius: 8px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f9fbfd;
+            color: var(--light-text);
+        }
+        
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background-color: white;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 22px;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .logo i {
+            margin-right: 8px;
+        }
+        
+        .github-link {
+            display: flex;
+            align-items: center;
+            color: #606266;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .github-link:hover {
+            color: var(--primary-color);
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .translate-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .textarea-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        .char-count {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: #909399;
+            font-size: 12px;
+        }
+        
+        .result-container {
+            background-color: #f5f7fa;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid #EBEEF5;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            background-color: white;
+            padding: 15px 20px;
+            text-align: center;
+            color: #909399;
+            font-size: 14px;
+            box-shadow: 0 -2px 12px 0 rgba(0, 0, 0, 0.05);
+            margin-top: auto;
+        }
+        
+        .loading-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            margin: 0 2px;
+            animation: loading 1.4s infinite ease-in-out both;
+        }
+        
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 15px;
+                height: 50px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .translate-container {
+                padding: 15px;
+            }
+            
+            .el-col {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <a href="/" class="logo">
+                <i class="fas fa-language"></i>
+                Transmute
+            </a>
+            <a href="https://github.com/yourusername/transmute" target="_blank" class="github-link">
+                <i class="fab fa-github" style="font-size: 24px;"></i>
+            </a>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div class="content">
+            <div class="translate-container">
+                <!-- 第一行：语言选择 -->
+                <el-row :gutter="20">
+                    <el-col :xs="24" :sm="12">
+                        <el-select v-model="sourceLanguage" placeholder="选择源语言" style="width: 100%">
+                            <el-option v-for="item in languages" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                        </el-select>
+                    </el-col>
+                    <el-col :xs="24" :sm="12">
+                        <el-select v-model="targetLanguage" placeholder="选择目标语言" style="width: 100%">
+                            <el-option v-for="item in languages" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                        </el-select>
+                    </el-col>
+                </el-row>
+                
+                <!-- 第二行：内容输入框 -->
+                <div class="textarea-container">
+                    <el-input
+                        type="textarea"
+                        v-model="inputText"
+                        :autosize="{ minRows: 5, maxRows: 10 }"
+                        placeholder="请输入要翻译的内容..."
+                        @input="updateCharCount"
+                    ></el-input>
+                    <div class="char-count">{{ charCount }}/5000</div>
+                </div>
+                
+                <!-- 第三行：AI模型选择和提交按钮 -->
+                <el-row :gutter="20">
+                    <el-col :xs="16" :sm="18">
+                        <el-select v-model="selectedModel" placeholder="选择AI模型" style="width: 100%">
+                            <el-option v-for="model in models" :key="model.value" :label="model.label" :value="model.value"></el-option>
+                        </el-select>
+                    </el-col>
+                    <el-col :xs="8" :sm="6">
+                        <el-button 
+                            type="primary" 
+                            @click="translate" 
+                            :loading="isLoading" 
+                            style="width: 100%" 
+                            icon="el-icon-right"
+                            :disabled="!inputText.trim() || charCount > 5000">
+                            翻译
+                        </el-button>
+                    </el-col>
+                </el-row>
+                
+                <!-- 第四行：翻译结果展示 -->
+                <div class="result-container">
+                    <template v-if="isLoading">
+                        <span>正在翻译中</span>
+                        <span class="loading-dot"></span>
+                        <span class="loading-dot"></span>
+                        <span class="loading-dot"></span>
+                    </template>
+                    <div>
+                        <el-input
+                        type="textarea"
+                        :autosize="{ minRows: 5, maxRows: 10 }"
+                        placeholder="翻译结果"
+                        v-model="translationResult">
+                        </el-input>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部版权信息 -->
+        <div class="footer">
+            <p>© 2025 Transmute. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <!-- 引入Vue和Element UI的JS -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    sourceLanguage: 'auto',
+                    targetLanguage: 'en',
+                    inputText: '',
+                    selectedModel: 'Qwen/Qwen2.5-Coder-32B-Instruct',
+                    translationResult: '',
+                    isLoading: false,
+                    charCount: 0,
+                    languages: [
+                        { value: 'auto', label: '自动检测' },
+                        { value: 'zh', label: '中文' },
+                        { value: 'en', label: '英文' },
+                        { value: 'ja', label: '日文' },
+                        { value: 'ko', label: '韩文' },
+                        { value: 'fr', label: '法文' },
+                        { value: 'de', label: '德文' },
+                        { value: 'es', label: '西班牙文' },
+                        { value: 'it', label: '意大利文' },
+                        { value: 'ru', label: '俄文' },
+                        { value: 'pt', label: '葡萄牙文' },
+                        { value: 'ar', label: '阿拉伯文' },
+                    ],
+                    models: [
+                        { value: 'Qwen/Qwen2.5-Coder-32B-Instruct', label: 'Qwen2.5-Coder-32B' },
+                        { value: 'Qwen/Qwen2-72B-Instruct', label: 'Qwen2-72B' },
+                        { value: 'openai/gpt-4-turbo', label: 'GPT-4 Turbo' },
+                        { value: 'Claude3/claude-3-opus', label: 'Claude 3 Opus' },
+                    ]
+                }
+            },
+            methods: {
+                updateCharCount() {
+                    this.charCount = this.inputText.length;
+                },
+                // 添加这个新方法，实现打字机效果
+                addTextWithTypewriterEffect(text) {
+                    // 直接添加文本，因为流式输出本身就有打字机的视觉效果
+                    this.translationResult += text;
+                    console.log(translationResult);
+                    
+                    // 如果需要，可以在这里添加自动滚动到底部的功能
+                    this.$nextTick(() => {
+                        const resultContainer = document.querySelector('.result-container');
+                        if (resultContainer) {
+                            resultContainer.scrollTop = resultContainer.scrollHeight;
+                        }
+                    });
+                },
+                translate() {
+                    if (!this.inputText.trim()) {
+                        this.$message.warning('请输入要翻译的内容');
+                        return;
+                    }
+                    
+                    if (this.charCount > 5000) {
+                        this.$message.error('输入内容不能超过5000个字符');
+                        return;
+                    }
+                    
+                    this.isLoading = true;
+                    this.translationResult = '';
+                    
+                    const payload = {
+                        target_language: this.targetLanguage,
+                        model: this.selectedModel,
+                        input: this.inputText
+                    };
+                    
+                    // 使用POST方法发送JSON数据
+                    fetch('/api/translate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    })
+                    .then(response => {
+                        // 确保响应是可读流
+                        if (!response.ok) {
+                            throw new Error('网络响应错误');
+                        }
+                        // 获取 Content-Type 响应头
+                        const contentType = response.headers.get('Content-Type');
+                        if (contentType && contentType.includes('application/json')) {
+                            response.json()
+                            .then(jsonData => {
+                                if (jsonData.code != 200) {
+                                    console.log(jsonData);
+                                    this.$message.error(jsonData.msg);
+                                    // 关闭loading
+                                    this.isLoading = false;
+                                    return;
+                                }
+                            })
+                            return;
+                            // jsonData = response.json();
+                            // if(  jsonData.code != 200 ) {
+                            //     console.log(jsonData);
+                            //     this.$message.error(jsonData.msg);
+                            //     return;
+                            // }
+                            
+                        }
+                        
+                        // 获取响应的reader
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let buffer = '';
+                        
+                        // 递归读取流数据
+                        const processStream = () => {
+                            return reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    this.isLoading = false;
+                                    return;
+                                }
+                                
+                                // 解码二进制数据
+                                buffer += decoder.decode(value, { stream: true });
+                                
+                                // 处理接收到的数据
+                                const lines = buffer.split('\n');
+                                buffer = lines.pop() || ''; // 保留最后一个可能不完整的行
+                                
+                                for (const line of lines) {
+                                    if (line.trim() === '') continue;
+                                    
+                                    if (line.includes('[DONE]')) {
+                                        this.isLoading = false;
+                                        continue;
+                                    }
+                                    
+                                    if (line.startsWith('data:')) {
+                                        try {
+                                            // 解析数据行
+                                            const jsonStr = line.substring(5).trim();
+                                            const data = JSON.parse(jsonStr);
+                                            if (data.value !== undefined) {
+                                                this.translationResult += data.value;
+                                                // console.log(this.translationResult);
+                                            }
+                                        } catch (e) {
+                                            console.error('解析流数据失败:', e, line);
+                                        }
+                                    }
+                                }
+                                
+                                // 继续读取
+                                return processStream();
+                            });
+                        };
+                        
+                        // 开始处理流
+                        return processStream();
+                    })
+                    .catch(error => {
+                        console.error('翻译请求失败:', error);
+                        this.isLoading = false;
+                        this.$message.error('翻译请求失败，请重试');
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

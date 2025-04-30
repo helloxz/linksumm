@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Link Summarizer</title>
+    <meta name="description" content="Enter a URL to get its content summarized by AI.">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape */
+            -webkit-tap-highlight-color: rgba(0,0,0,0); /* Remove tap highlight */
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+            background-color: #f7f8fc; /* Lighter, softer background */
+            color: #34495e; /* Darker grey for text */
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #app {
+            flex-grow: 1; /* Allow app to take available vertical space */
+            width: 100%;
+            max-width: 800px; /* Max width for larger screens */
+            margin: 0 auto; /* Center on larger screens */
+            padding: 15px; /* Mobile padding */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-top: 10px;
+        }
+        .header h1 {
+            font-size: 1.9em; /* Slightly smaller for mobile */
+            color: #3498db; /* Refined blue */
+            margin: 0 0 5px 0;
+            font-weight: 600;
+            display: flex; /* Align icon and text */
+            align-items: center;
+            justify-content: center;
+        }
+        .header .icon {
+            font-size: 1.2em; /* Adjust icon size relative to text */
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .header p {
+            color: #7f8c8d; /* Softer grey */
+            font-size: 0.95em;
+            margin: 0;
+        }
+
+        /* --- Input Section --- */
+        .input-section {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06); /* Softer shadow */
+            margin-bottom: 30px;
+            transition: box-shadow 0.3s ease;
+        }
+        .input-section:focus-within { /* Slight glow when interacting */
+             box-shadow: 0 6px 20px rgba(52, 152, 219, 0.1);
+        }
+
+        /* Input Row Layout (Mobile First - Stacked) */
+        .input-row {
+            display: flex;
+            flex-direction: column; /* Stack vertically */
+            gap: 15px; /* Space between stacked items */
+        }
+
+        /* Element UI Component Styling */
+        .input-row .el-input .el-input-group__prepend {
+            background-color: #fdfdfe;
+            color: #7f8c8d;
+            border-color: #dfe4ea;
+            border-radius: 8px 0 0 8px; /* Match input */
+        }
+        .input-row .el-input .el-input__inner {
+            border-radius: 0 8px 8px 0; /* Ensure right side is rounded */
+            border-color: #dfe4ea;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+             height: 42px; /* Consistent height */
+             padding: 0 12px;
+        }
+        /* Adjust if prepend exists */
+         .el-input-group--prepend .el-input__inner {
+             border-radius: 0 8px 8px 0 !important;
+         }
+         /* Adjust if clearable exists */
+         .el-input--suffix .el-input__inner {
+            padding-right: 30px;
+         }
+         /* Basic input */
+         .el-input:not(.el-input-group--prepend) .el-input__inner {
+             border-radius: 8px !important;
+         }
+
+
+        .input-row .el-input .el-input__inner:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); /* Focus ring */
+        }
+
+        .input-row .el-select {
+            width: 100%; /* Full width on mobile */
+        }
+        .input-row .el-select .el-input__inner {
+            border-radius: 8px; /* Consistent rounding */
+            border-color: #dfe4ea;
+             height: 42px; /* Consistent height */
+             padding: 0 12px;
+             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+         .input-row .el-select .el-input.is-focus .el-input__inner {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); /* Focus ring */
+         }
+        /* Style the dropdown itself - limited capabilities without deep overrides */
+        .el-select-dropdown .el-select-dropdown__item.selected {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .input-row .el-button {
+            width: 100%; /* Full width button on mobile */
+        }
+        .input-row .el-button--primary {
+            background-image: linear-gradient(to right, #4facfe 0%, #3498db 100%);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 12px 20px; /* Better padding */
+             height: 42px; /* Consistent height */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+            color: #ffffff; /* Ensure text is white */
+        }
+        .input-row .el-button--primary:hover {
+            background-image: linear-gradient(to right, #4facfe 0%, #2a88c7 100%);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+            transform: translateY(-1px); /* Subtle lift */
+        }
+         .input-row .el-button--primary:active {
+            transform: translateY(0px);
+            box-shadow: 0 1px 3px rgba(52, 152, 219, 0.3);
+         }
+
+        .input-row .el-button--primary.is-loading {
+             background-image: linear-gradient(to right, #a6d1fc 0%, #8ec3e4 100%);
+             box-shadow: none;
+             cursor: not-allowed;
+        }
+         .input-row .el-button--primary.is-disabled {
+            background-image: linear-gradient(to right, #d3e7fd 0%, #b1d3e9 100%);
+            box-shadow: none;
+            color: #bdc3c7;
+             cursor: not-allowed;
+        }
+
+        /* Error Alert */
+         .el-alert--error {
+            background-color: #fdecea; /* Lighter red */
+            color: #e74c3c;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+         }
+        .el-alert__title {
+             color: #e74c3c; /* Ensure title matches */
+        }
+        .el-alert__icon {
+             color: #e74c3c !important; /* Force icon color */
+        }
+
+
+        /* --- Result Section --- */
+        .result-section {
+            margin-top: 0; /* Remove top margin as input section has bottom margin */
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            flex-grow: 1; /* Allow it to take space if content is short */
+             word-wrap: break-word; /* Prevent overflow */
+             overflow-wrap: break-word; /* Standard property */
+             hyphens: auto; /* Help break words if needed */
+        }
+        .result-section h2 { /* Original Title */
+            margin-top: 0;
+            font-size: 1.3em;
+            color: #2c3e50; /* Slightly darker */
+            border-bottom: 2px solid #ecf0f1; /* Subtle separator */
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .result-section h3 { /* "Summary:" label */
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #3498db; /* Use primary color */
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        /* --- Marked.js Output Styling (#summary-output) --- */
+        #summary-output {
+            color: #34495e; /* Main text color */
+            line-height: 1.7; /* Improve readability */
+        }
+        #summary-output h1,
+        #summary-output h2,
+        #summary-output h3,
+        #summary-output h4,
+        #summary-output h5,
+        #summary-output h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            font-weight: 600;
+            color: #2c3e50; /* Darker heading color */
+            line-height: 1.3;
+        }
+        #summary-output h1 { font-size: 1.6em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em;}
+        #summary-output h2 { font-size: 1.4em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em;}
+        #summary-output h3 { font-size: 1.25em; }
+        #summary-output h4 { font-size: 1.1em; }
+        #summary-output h5 { font-size: 1em; }
+        #summary-output h6 { font-size: 0.9em; color: #7f8c8d; } /* Softer color for h6 */
+
+        #summary-output p {
+            margin-top: 0;
+            margin-bottom: 1em;
+        }
+        #summary-output ul,
+        #summary-output ol {
+            padding-left: 1.8em; /* Adjust indentation */
+            margin-top: 0;
+            margin-bottom: 1em;
+        }
+         #summary-output ul li,
+         #summary-output ol li {
+            margin-bottom: 0.5em;
+         }
+        #summary-output ul li::marker {
+            color: #3498db; /* Style bullet points */
+        }
+
+        /* Inline Code */
+        #summary-output code {
+            background-color: #eef1f3; /* Light grey background */
+            padding: 0.2em 0.5em;
+            border-radius: 4px;
+            font-size: 0.88em; /* Slightly smaller */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+             color: #c0392b; /* Subtle red tint for inline code */
+             word-wrap: break-word; /* Allow breaking */
+        }
+
+        /* Code Blocks */
+        #summary-output pre {
+            background-color: #2d2d2d; /* Dark background */
+            color: #f8f8f2; /* Light text */
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto; /* Allow horizontal scroll */
+            margin-top: 0;
+            margin-bottom: 1.2em;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+             white-space: pre; /* Preserve whitespace and line breaks */
+        }
+        #summary-output pre code {
+            background-color: transparent; /* Inherit pre background */
+            color: inherit; /* Inherit pre color */
+            padding: 0;
+            border-radius: 0;
+            font-size: inherit; /* Match pre font size */
+            font-family: inherit;
+        }
+
+        /* Blockquotes */
+        #summary-output blockquote {
+            border-left: 4px solid #3498db; /* Use primary color for border */
+            padding: 0.5em 1em;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 1em;
+            color: #7f8c8d; /* Softer text color */
+            background-color: #fbfcfd; /* Very light background */
+            border-radius: 0 4px 4px 0; /* Round corners on the right */
+        }
+        #summary-output blockquote p { /* Remove margin for paragraph inside blockquote */
+             margin-bottom: 0;
+        }
+        /* Special styling for the source link blockquote */
+         #summary-output blockquote:has(> a[href^="http"]) {
+             background-color: #eaf5fc;
+             border-left-color: #2980b9;
+             color: #2c3e50;
+         }
+          #summary-output blockquote:has(> a[href^="http"]) a {
+             font-weight: 500;
+         }
+
+
+        /* Images */
+        #summary-output img {
+            max-width: 100%;
+            height: auto;
+            display: block; /* Prevent extra space */
+            margin: 1.5em auto; /* Center images */
+            border-radius: 8px; /* Rounded corners for images */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
+        /* Links */
+        #summary-output a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease, border-bottom 0.2s ease;
+             border-bottom: 1px solid transparent; /* Prepare for hover effect */
+        }
+        #summary-output a:hover {
+            color: #2980b9; /* Darker blue on hover */
+            border-bottom: 1px solid #a9d6f5; /* Subtle underline on hover */
+        }
+
+        /* Tables (Basic Styling) */
+        #summary-output table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1em;
+            display: block; /* Makes table scrollable horizontally */
+            overflow-x: auto;
+        }
+         #summary-output th, #summary-output td {
+             border: 1px solid #dfe4ea;
+             padding: 0.6em 0.8em;
+             text-align: left;
+         }
+         #summary-output th {
+             background-color: #f7f8fc;
+             font-weight: 600;
+         }
+
+        /* Horizontal Rule */
+        #summary-output hr {
+            border: 0;
+            border-top: 1px solid #eaecef;
+            margin: 1.5em 0;
+        }
+
+
+        /* --- Footer --- */
+        .footer {
+            text-align: center;
+            margin-top: 30px; /* Space above footer */
+            padding: 20px 15px;
+            border-top: 1px solid #e9ecef; /* Light separator line */
+            font-size: 0.85em;
+            color: #adb5bd; /* Lighter grey */
+        }
+        .footer p {
+            margin: 0.3em 0; /* Space between footer lines */
+        }
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .footer a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        /* --- Loading State (Using Button's built-in, this is fallback) --- */
+        .loading-spinner {
+             text-align: center;
+             padding: 40px 0;
+             color: #3498db;
+         }
+         .loading-spinner i {
+             font-size: 2.5em;
+             animation: rotating 2s linear infinite;
+         }
+         .loading-spinner p {
+             margin-top: 10px;
+             font-size: 0.9em;
+             color: #909399;
+         }
+         @keyframes rotating {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+         }
+
+
+        /* --- Responsive Adjustments (Desktop / Larger Screens) --- */
+        @media (min-width: 768px) {
+            #app {
+                padding: 30px 20px; /* More padding on desktop */
+            }
+
+            .header h1 {
+                font-size: 2.4em; /* Larger title */
+            }
+             .header p {
+                font-size: 1em;
+            }
+
+            .input-section {
+                 padding: 25px;
+            }
+
+            .input-row {
+                flex-direction: row; /* Align items horizontally */
+                align-items: center; /* Vertically align in the middle */
+                gap: 15px; /* Space between horizontal items */
+            }
+
+            .input-row .el-input {
+                flex-grow: 1; /* URL input takes most space */
+                min-width: 300px; /* Prevent it getting too small */
+                 width: auto; /* Override mobile width */
+            }
+            .input-row .el-select {
+                width: 180px; /* Fixed width for selector */
+                flex-shrink: 0; /* Prevent shrinking */
+            }
+            .input-row .el-button {
+                width: auto; /* Button takes its natural width */
+                flex-shrink: 0; /* Prevent shrinking */
+            }
+
+            .result-section {
+                 padding: 25px 30px; /* More horizontal padding */
+            }
+             #summary-output {
+                font-size: 1.05em; /* Slightly larger base font on desktop */
+             }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1><span class="icon">🔗</span> LinkSumm</h1>
+            <p>输入一个URL地址，让AI为您总结内容。</p>
+        </div>
+
+        <div class="input-section">
+            <el-alert
+                v-if="errorMessage"
+                :title="errorMessage"
+                type="error"
+                show-icon
+                :closable="false"
+                style="margin-bottom: 20px;">
+            </el-alert>
+
+            <div class="input-row">
+                <el-input
+                    placeholder="Enter URL here (e.g., https://example.com/article)"
+                    v-model.trim="urlInput"
+                    clearable
+                    @keyup.enter.native="startSummarization"
+                    :disabled="isLoading">
+                    <template slot="prepend">URL</template>
+                </el-input>
+
+                <el-select
+                    v-model="selectedModel"
+                    placeholder="Select Model"
+                    :disabled="isLoading"
+                    size="medium">
+                     <el-option v-if="models.length === 0" label="Loading models..." value="" disabled></el-option>
+                    <el-option label="Auto Select" value="auto"></el-option>
+                    <el-option
+                        v-for="model in models"
+                        :key="model.model"
+                        :label="model.name"
+                        :value="model.model">
+                    </el-option>
+                </el-select>
+
+                <el-button
+                    type="primary"
+                    @click="startSummarization"
+                    :loading="isLoading"
+                    :disabled="!urlInput || isLoading"
+                    icon="el-icon-search"
+                    size="medium">开始总结
+                </el-button>
+            </div>
+        </div>
+
+        <div v-if="outputContent != ''" class="result-section">
+            <h2>标题: ${ originalTitle }</h2>
+            <h3>总结:</h3>
+            <div id="summary-output" v-html="outputContent"></div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; Link Summarizer. All Rights Reserved.</p>
+            <p>Powered by Vue, Element UI, and AI</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        new Vue({
+            delimiters: ['${', '}'],  // Keep your custom delimiters
+            el: '#app',
+            data() {
+                return {
+                    urlInput: '',
+                    selectedModel: 'auto', // Default to auto or the first available model
+                    models: [],
+                    isLoading: false,
+                    loadingStatus: '', // To show fetching/summarizing status
+                    originalTitle: '', // Initialize as empty string
+                    originalContent: '', // Store original fetched content if needed
+                    summaryContent: '', // Raw summary stream
+                    errorMessage: '',
+                    outputContent: "" // Initialize as empty string
+                }
+            },
+            computed: {
+                // Removed renderedSummary as rendering now happens directly during stream processing
+                // If you need it for other purposes, you can keep it:
+                /*
+                renderedSummary() {
+                    if (this.summaryContent) {
+                        marked.setOptions({
+                            gfm: true,
+                            breaks: false, // Use GFM line breaks (usually preferred)
+                            pedantic: false,
+                            smartLists: true,
+                            smartypants: false
+                        });
+                        return marked.parse(this.summaryContent);
+                    }
+                    return '';
+                }
+                */
+            },
+            methods: {
+                async fetchModels() {
+                    try {
+                        const response = await axios.get('/api/get/models');
+                        if (response.data && response.data.code === 200) {
+                            this.models = response.data.data;
+                            // Optional: Set a default model if 'auto' isn't preferred initially
+                            // if (this.models.length > 0 && this.selectedModel === 'auto') {
+                            //     this.selectedModel = this.models[0].model;
+                            // }
+                        } else {
+                            this.errorMessage = 'Failed to load AI models.';
+                            console.error("Error fetching models:", response.data);
+                        }
+                    } catch (error) {
+                         this.errorMessage = 'Error fetching AI models list.';
+                        console.error('Error fetching models:', error);
+                    }
+                },
+
+                async startSummarization() {
+                    if (!this.urlInput || this.isLoading) {
+                        return;
+                    }
+                    // Basic URL validation
+                    if (!this.urlInput.startsWith('http://') && !this.urlInput.startsWith('https://')) {
+                         this.errorMessage = 'Please enter a valid URL starting with http:// or https://';
+                         return;
+                    }
+
+
+                    this.isLoading = true;
+                    this.errorMessage = '';
+                    this.summaryContent = ''; // Clear previous raw summary
+                    this.outputContent = ''; // Clear previous rendered output
+                    this.originalTitle = '';
+                    this.originalContent = ''; // Clear previous content
+                    this.loadingStatus = 'Fetching content from URL...'; // Although not displayed by default now
+
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('url', this.urlInput);
+                        // 1. Fetch Content
+                        const contentResponse = await axios.post('/api/get/content', formData);
+
+                        if (contentResponse.data && contentResponse.data.code === 200) {
+                            this.originalTitle = contentResponse.data.data.title || 'No title found'; // Provide default
+                            // console.log('Original Title:', this.originalTitle);
+                            this.originalContent = contentResponse.data.data.content;
+
+                            if (!this.originalContent || this.originalContent === "No content could be extracted" || this.originalContent === "Error extracting content") {
+                                 this.errorMessage = `Could not extract readable content from the URL. (${this.originalContent || 'Empty content'})`;
+                                this.isLoading = false;
+                                return;
+                            }
+
+                            // 2. Fetch Summary (using fetch for streaming)
+                            this.loadingStatus = 'Summarizing content...';
+                            await this.fetchSummaryStream(this.originalContent);
+
+                        } else {
+                            throw new Error(contentResponse.data.msg || 'Failed to fetch content.');
+                        }
+
+                    } catch (error) {
+                        console.error('Summarization process failed:', error);
+                        this.errorMessage = `Error: ${error.message || 'An unknown error occurred.'}`;
+                        this.isLoading = false;
+                        this.loadingStatus = '';
+                         this.outputContent = ''; // Clear output on error
+                         this.originalTitle = ''; // Clear title on error
+                    }
+                },
+
+                async fetchSummaryStream(contentToSummarize) {
+                    const payload = {
+                        model: this.selectedModel,
+                        input: contentToSummarize
+                    };
+
+                    // Configure marked once
+                    marked.setOptions({
+                         gfm: true,
+                         breaks: false, // Consider true if you want single newlines to be <br>
+                         pedantic: false,
+                         smartLists: true,
+                         smartypants: false,
+                         // Optional: Add highlight.js if you want syntax highlighting in code blocks
+                         // highlight: function(code, lang) {
+                         //   const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                         //   return hljs.highlight(code, { language }).value;
+                         // }
+                    });
+
+
+                    try {
+                        const response = await fetch('/api/summ', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (!response.ok) {
+                             // Try to read error message from backend if it's JSON
+                             let errorMsg = `Network response was not ok (Status: ${response.status})`;
+                             try {
+                                 const errData = await response.json();
+                                 errorMsg = errData.msg || errData.detail || errorMsg;
+                             } catch(e) { /* Ignore if response is not JSON */ }
+                            throw new Error(errorMsg);
+                        }
+
+                        // Check if the response is JSON (likely an error before streaming started)
+                        const contentType = response.headers.get('Content-Type');
+                         if (contentType && contentType.includes('application/json')) {
+                             const jsonData = await response.json();
+                             if (jsonData.code !== 200 && jsonData.msg) { // Check for backend's specific error format
+                                 throw new Error(jsonData.msg);
+                              } else if (jsonData.code !== 200) {
+                                 throw new Error('Received an unexpected JSON error from the summary API.');
+                              }
+                             // Handle unexpected JSON success response? Unlikely for a stream endpoint.
+                             console.warn("Received unexpected JSON success response from streaming endpoint:", jsonData);
+                             this.isLoading = false; // Stop loading as stream isn't coming
+                             this.loadingStatus = '';
+                             return;
+                         }
+
+
+                        // Process the stream
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let buffer = '';
+                        this.summaryContent = ''; // Reset raw content buffer
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                // console.log("Stream finished.");
+                                break;
+                            }
+
+                            buffer += decoder.decode(value, { stream: true });
+                            // Use a more robust way to find SSE messages, handling potential multiple messages per chunk
+                            let boundary = buffer.indexOf('\n\n');
+                            while(boundary !== -1) {
+                                const message = buffer.substring(0, boundary);
+                                buffer = buffer.substring(boundary + 2); // Skip the \n\n
+
+                                const lines = message.split('\n');
+                                for (const line of lines) {
+                                     if (line.trim() === '' || !line.startsWith('data:')) continue;
+
+                                     if (line.includes('[DONE]')) {
+                                         // console.log("Received DONE signal in message.");
+                                         // Final render might happen below after loop finishes
+                                         break; // Process next message or exit if this was last part
+                                     }
+
+                                     try {
+                                         const jsonStr = line.substring(5).trim();
+                                         const data = JSON.parse(jsonStr);
+                                         if (data.value !== undefined) {
+                                             this.summaryContent += data.value;
+                                             // Render incrementally
+                                             this.outputContent = marked.parse(this.summaryContent);
+                                             // console.log('Chunk processed'); // For debugging
+                                         }
+                                     } catch (e) {
+                                         console.warn('Failed to parse stream data line:', line, e);
+                                     }
+                                }
+                                 // Check if [DONE] was processed inside this message's lines
+                                 if (message.includes('[DONE]')) {
+                                     // Force break from while loop? Maybe not needed if outer loop handles `done` correctly.
+                                 }
+                                boundary = buffer.indexOf('\n\n'); // Look for next message boundary
+                            }
+                             // If loop finished due to `done`, ensure final render with source link
+                             if (done) break;
+
+                        } // end while loop
+
+                        // Final rendering after stream completes to add the source link
+                         let url = this.urlInput;
+                         this.outputContent = marked.parse(this.summaryContent + `\n\n> 原文来自：[${url}](${url})`);
+                         console.log("Final render complete.");
+
+                         this.isLoading = false; // Mark loading as finished
+                         this.loadingStatus = '';
+
+
+                    } catch (error) {
+                        console.error('Failed to fetch or process summary stream:', error);
+                        this.errorMessage = `Error during summarization: ${error.message}`;
+                        this.isLoading = false;
+                        this.loadingStatus = '';
+                        // Don't clear outputContent here, let the error message show
+                        // this.outputContent = '';
+                        this.summaryContent = ''; // Clear potentially partial raw summary
+                    }
+                }
+            },
+            mounted() {
+                this.fetchModels(); // Load models when the app starts
+            }
+        });
+    </script>
+</body>
+</html>

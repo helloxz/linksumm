@@ -1,0 +1,241 @@
+:root {
+    --primary-color: #409EFF;
+    --secondary-color: #67C23A;
+    --dark-bg: #f5f7fa;
+    --light-text: #303133;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #F5F9FF;
+    color: var(--light-text);
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header {
+    background-color: white;
+    box-shadow: var(--box-shadow);
+    padding: 0 24px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* .el-select .el-input__inner {
+    border: none !important;
+    box-shadow: none !important;
+} */
+
+
+.btns{
+    margin-top: 20px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 22px;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.logo i {
+    margin-right: 8px;
+}
+
+.github-link {
+    display: flex;
+    align-items: center;
+    color: #606266;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.github-link:hover {
+    color: var(--primary-color);
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.language-selector {
+    /* background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow); */
+    /* padding: 20px; */
+    margin-bottom: 20px;
+}
+.language-selector .el-input__inner{
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.language-selector .el-select-dropdown{
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.el-textarea__inner{
+    border:none !important;
+    box-shadow: none !important;
+}
+
+
+.translate-container {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.textarea-container {
+    position: relative;
+    margin: 10px 0;
+}
+
+.char-count {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: #909399;
+    font-size: 12px;
+}
+
+.result-container {
+    background-color: #F8F8FB;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 10px;
+    margin-top: 20px;
+}
+
+.result-output {
+    background-color: #f5f7fa;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #EBEEF5;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    font-family: "Courier New", Courier, monospace;
+    color: #333;
+}
+
+.footer {
+    background-color: white;
+    padding: 15px 20px;
+    text-align: center;
+    color: #909399;
+    font-size: 14px;
+    box-shadow: var(--box-shadow);
+    margin-top: auto;
+}
+
+.loading-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    margin: 0 2px;
+    animation: loading 1.4s infinite ease-in-out both;
+}
+.switch{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 40px;
+}
+
+.footer a{
+    text-decoration: none;
+    color:#F56C6C;
+}
+
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes loading {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .header {
+        padding: 0 24px;
+        height: 60px;
+    }
+    
+    .logo {
+        font-size: 18px;
+    }
+    
+    .content {
+        padding: 15px;
+    }
+    
+    .language-selector, .translate-container, .result-container {
+        padding: 12px;
+    }
+    .language-selector{
+        margin-bottom: 0px;
+    }
+    
+    .el-col {
+        margin-bottom: 15px;
+    }
+}
+.input-left-btns{
+    width: 140px;
+    text-align: left;
+}
+.input-left-btns .el-select .el-input__inner {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: #DBEAFE;
+    color:#606266;
+    border-radius: 14px;
+}
+.input-right-btns{
+    /* width: 100%; */
+    text-align: right;
+}
+
+.result-container .el-textarea__inner{
+    background-color: #F8F8FB;
+}
+
+.result-btns{
+    margin-top: 20px;
+    text-align: right;
+}

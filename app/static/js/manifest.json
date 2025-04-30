@@ -1,0 +1,20 @@
+{
+    "short_name": "北冥翻译",
+    "name": "北冥翻译 - AI 智能翻译工具",
+    "icons": [
+      {
+        "src": "/static/images/icon128.png",
+        "type": "image/png",
+        "sizes": "128x128"
+      },
+      {
+        "src": "/static/images/logo.png",
+        "type": "image/png",
+        "sizes": "256x256"
+      }
+    ],
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000"
+}
