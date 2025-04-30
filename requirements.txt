@@ -12,3 +12,4 @@ html_clean
 lxml_html_clean
 h2
 bs4
+python-multipart

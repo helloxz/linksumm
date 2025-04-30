@@ -23,7 +23,7 @@ LinkSumm是一款使用AI大模型驱动的智能摘要提取器，您可以输�
 version: '3.8'
 
 services:
-  transmute:
+  linksumm:
     container_name: linksumm
     image: helloz/linksumm
     ports:
