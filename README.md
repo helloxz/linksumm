@@ -2,6 +2,8 @@
 
 LinkSumm是一款使用AI大模型驱动的智能摘要提取器，您可以输入一个URL地址，让AI为您总结内容。
 
+![c6f2f05dfe0c618c.png](https://img.rss.ink/imgs/2025/04/30/c6f2f05dfe0c618c.png)
+
 ## 主要特点
 
 * [x] 输入URL总结内容
