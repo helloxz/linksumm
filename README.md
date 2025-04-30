@@ -109,6 +109,10 @@ Transmute配置文件位于挂载目录下的`config/config.json`，使用标准
 * `app.req_limit`：单个访客请求频率限制，单位为24H，超出请求频率后将被限制
 * `app.word_limit`：最大可输入的字符串长度
 
+## 已知问题
+
+* 如果对方网站使用了WAF，LinkSumm将无法进行获取和总结！
+
 ## 问题反馈
 
 * 如果有任何问题可以在[Issues](https://github.com/helloxz/linksumm/issues) 中提交。
