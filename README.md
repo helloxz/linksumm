@@ -104,3 +104,16 @@ Transmute配置文件位于挂载目录下的`config/config.json`，使用标准
 
 * `app.req_limit`：单个访客请求频率限制，单位为24H，超出请求频率后将被限制
 * `app.word_limit`：最大可输入的字符串长度
+
+## 问题反馈
+
+* 如果有任何问题可以在[Issues](https://github.com/helloxz/linksumm/issues) 中提交。
+* 或者添加我的微信：`xiaozme`，请务必备注LinkSumm
+
+## 其他产品
+
+如果您有兴趣，还可以了解我们的其他产品。
+
+* [Zdir](https://www.zdir.pro/zh/) - 一款轻量级、多功能的文件分享程序。
+* [OneNav](https://www.onenav.top/) - 高效的浏览器书签管理工具，将您的书签集中式管理。
+* [ImgURL](https://www.imgurl.org/) - 2017年上线的免费图床。
