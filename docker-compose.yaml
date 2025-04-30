@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  transmute:
+    container_name: linksumm
+    image: helloz/linksumm
+    ports:
+      - "2083:2083"
+    restart: always
+    volumes:
+      - ./data:/opt/linksumm/app/data
