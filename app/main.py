@@ -6,6 +6,7 @@ import redis.asyncio as redis
 from app.routers.routers import router
 from app.middleware.req_limit import req_limit  # 直接导入函数，而不是整个模块
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
 # 声明全局变量
 config = None
@@ -37,6 +38,13 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 注册中间件
 app.middleware("http")(req_limit)
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=False,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 将路由添加到应用中
 app.include_router(router)

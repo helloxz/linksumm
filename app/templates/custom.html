@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LinkSumm - 输入URL让AI为您总结</title>
+    <meta name="description" content="LinkSumm可以帮助您将网页内容进行总结，提取出重要信息。">
+    <meta name="keywords" content="LinkSumm, AI总结, AI提取, 网页总结, 内容提取">
+    <link rel="stylesheet" href="/static/element-ui/index.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="https://tj.rss.ink/script.js" data-website-id="fc376c34-e38d-4d45-bf03-f369a2298782"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+             <h1><span class="icon">🔗</span> LinkSumm</h1>
+             <p>输入一个URL地址，让AI为您总结内容</p>
+        </div>
+
+        <div class="input-section">
+            <!-- 模式选择 -->
+            <div class="select-mode">
+                <div>
+                    <el-radio-group v-model="mode">
+                        <el-radio-button label="快速请求"></el-radio-button>
+                        <el-tooltip class="item" effect="light" content="支持SPA单页应用，但速度较慢" placement="right">
+                            <el-radio-button  label="深度请求"></el-radio-button>
+                        </el-tooltip>
+                        
+                    </el-radio-group>
+                </div>
+            </div>
+            <!-- 模式选择END -->
+             <el-alert
+                v-if="errorMessage"
+                :title="errorMessage"
+                type="error"
+                show-icon
+                :closable="false"
+                style="margin-bottom: 20px;">
+            </el-alert>
+
+            <div class="input-row">
+                <el-input
+                    placeholder="输入URL地址 (例如: https://example.com/article)"
+                    v-model.trim="urlInput"
+                    prefix-icon="el-icon-link"
+                    size="medium"
+                    clearable
+                    @keyup.enter.native="startSummarization"
+                    :disabled="isLoading">
+                    
+                    
+                </el-input>
+
+                <!-- 第二行内容 -->
+                <div class="row-2">
+
+                <el-select
+                    v-model="selectedModel"
+                    placeholder="选择模型"
+                    :disabled="isLoading"
+                    size="medium">
+                    <el-option v-if="models.length === 0" label="加载模型中..." value="" disabled></el-option>
+                     <el-option label="自动选择" value="auto"></el-option>
+                    <el-option
+                        v-for="model in models"
+                        :key="model.model"
+                        :label="model.name"
+                        :value="model.model">
+                    </el-option>
+                </el-select>
+
+                <el-button
+                    type="primary"
+                    @click="startSummarization"
+                    :loading="isLoading"
+                    :disabled="!urlInput || isLoading"
+                    icon="el-icon-s-promotion"
+                    size="medium">
+                    开始总结
+                </el-button>
+                </div>
+                <!-- 第二行内容END -->
+            </div>
+        </div>
+
+        <div v-if="outputContent != ''" class="result-section">
+             <h2>标题: ${ originalTitle }</h2>
+             <h3>总结:</h3>
+            <div id="summary-output" v-html="outputContent"></div>
+        </div>
+
+        <div class="footer">
+            <p>&copy;2025 <a rel="nofollow" target="_blank" href="https://github.com/helloxz/linksumm">LinkSumm</a>. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <script src="/static/js/vue.min.js"></script>
+    <script src="/static/element-ui/index.js"></script>
+    <script src="/static/js/axios.min.js"></script>
+    <script src="/static/js/marked.min.js"></script>
+
+    <script>
+        new Vue({
+            delimiters: ['${', '}'],  // 修改为任意你喜欢的符号组合，避免和Jinja2冲突
+            el: '#app',
+            data() {
+                return {
+                    mode: '快速请求', // 默认模式
+                    urlInput: '',
+                    selectedModel: 'auto', // Default to auto or the first available model
+                    models: [],
+                    isLoading: false,
+                    loadingStatus: '', // To show fetching/summarizing status
+                    originalTitle: '测试',
+                    originalContent: '', // Store original fetched content if needed
+                    summaryContent: '', // Raw summary stream
+                    errorMessage: '',
+                    outputContent:""// 输出内容
+                }
+            },
+            computed: {
+                renderedSummary() {
+                    if (this.summaryContent) {
+                        // Configure marked - enable GitHub Flavored Markdown
+                        marked.setOptions({
+                            gfm: true,
+                            breaks: false, // Use GFM line breaks
+                            pedantic: false,
+                            smartLists: true,
+                            smartypants: false
+                        });
+                        return marked.parse(this.summaryContent);
+                    }
+                    return '';
+                }
+            },
+            methods: {
+                handleUrlParam() {
+                    // 1. 获取地址栏上的?url=参数值
+                    const queryString = window.location.search;
+                    const urlParams = new URLSearchParams(queryString);
+                    const urlValue = urlParams.get('url');
+                    
+                    // 如果没有url参数，直接返回
+                    if (!urlValue) return;
+                    
+                    // 2. 验证URL是否合法
+                    try {
+                    // 使用URL构造函数验证URL合法性
+                    new URL(urlValue);
+                    } catch (e) {
+                    // URL不合法，直接返回
+                    return;
+                    }
+                    
+                    // 3. 将合法URL赋值给this.urlInput
+                    this.urlInput = urlValue;
+                    
+                    // 4. 调用startSummarization函数
+                    this.startSummarization();
+                },
+                async fetchModels() {
+                    try {
+                        const response = await axios.get('/api/get/models');
+                        if (response.data && response.data.code === 200) {
+                            this.models = response.data.data;
+                        } else {
+                            this.errorMessage = 'Failed to load AI models.';
+                            console.error("Error fetching models:", response.data);
+                        }
+                    } catch (error) {
+                         this.errorMessage = 'Error fetching AI models list.';
+                        console.error('Error fetching models:', error);
+                    }
+                },
+
+                async startSummarization() {
+                    if (!this.urlInput || this.isLoading) {
+                        return;
+                    }
+                    // Basic URL validation (consider a more robust regex if needed)
+                    if (!this.urlInput.startsWith('http://') && !this.urlInput.startsWith('https://')) {
+                         this.errorMessage = '请输入以 http:// 或 https:// 开头的有效URL';
+                         return;
+                    }
+
+                    this.isLoading = true;
+                    this.errorMessage = '';
+                    this.summaryContent = '';
+                    this.originalTitle = '';
+                    this.originalContent = '';
+                    this.outputContent = '';
+
+
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('url', this.urlInput);
+                        // 判断mode的值
+                        if (this.mode === '深度请求') {
+                            formData.append('mode', 'deep');
+                        } else {
+                            formData.append('mode', 'fast');
+                        }
+                        // 1. Fetch Content
+                        const contentResponse = await axios.post('/api/get/content', formData);
+
+                        if (contentResponse.data && contentResponse.data.code === 200) {
+                            this.originalTitle = contentResponse.data.data.title;
+                            this.originalContent = contentResponse.data.data.content;
+
+                            if (!this.originalContent || this.originalContent === "No content could be extracted" || this.originalContent === "Error extracting content") {
+                                 this.errorMessage = `无法从URL中提取可读内容 (${this.originalContent})`;
+                                 this.isLoading = false;
+                                 return;
+                            }
+
+                            // 2. Fetch Summary (using fetch for streaming)
+                            await this.fetchSummaryStream(this.originalContent);
+
+                        } else {
+                            throw new Error(contentResponse.data.msg || 'Failed to fetch content.');
+                        }
+
+                    } catch (error) {
+                        this.errorMessage = `错误: ${error.message || '发生未知错误'}`;
+                        this.isLoading = false;
+                        // 清空标题和内容
+                        this.originalTitle = '';
+                        this.originalContent = '';
+                        this.summaryContent = '';
+                        this.outputContent = '';
+                    }
+                },
+
+                async fetchSummaryStream(contentToSummarize) {
+                    const payload = {
+                        model: this.selectedModel,
+                        input: contentToSummarize
+                    };
+
+                    try {
+                        const response = await fetch('/api/summ', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (!response.ok) {
+                             let errorMsg = `网络响应错误 (状态: ${response.status})`;
+                             try {
+                                const errData = await response.json();
+                                errorMsg = errData.msg || errData.detail || errorMsg;
+                             } catch(e) { /* Ignore if response is not JSON */ }
+                            throw new Error(errorMsg);
+                        }
+
+                        // Check if the response is JSON (likely an error before streaming started)
+                        const contentType = response.headers.get('Content-Type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const jsonData = await response.json();
+                             if (jsonData.code !== 200) {
+                                 throw new Error(jsonData.msg || 'Received an error response from the summary API.');
+                             }
+                             console.warn("Received unexpected JSON response from streaming endpoint:", jsonData);
+                             this.isLoading = false;
+                             return;
+                        }
+
+                        // Process the stream
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let buffer = '';
+                        this.summaryContent = '';
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                break;
+                            }
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+
+                            for (const line of lines) {
+                                if (line.trim() === '' || !line.startsWith('data:')) continue;
+
+                                if (line.includes('[DONE]')) {
+                                    await new Promise(resolve => setTimeout(resolve, 50));
+                                    break;
+                                }
+
+                                try {
+                                    const jsonStr = line.substring(5).trim();
+                                    const data = JSON.parse(jsonStr);
+                                    if (data.value !== undefined) {
+                                        this.summaryContent += data.value;
+                                        this.outputContent = marked.parse(this.summaryContent);
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to parse stream data line:', line, e);
+                                }
+                            }
+                             if (lines.some(line => line.includes('[DONE]'))) {
+                                let url = this.urlInput;
+                                this.outputContent = marked.parse(this.summaryContent + `\n\n> 原文来自：[${url}](${url})`);
+                                // 清空输入URL
+                                this.urlInput = '';
+                                break;
+                             }
+                        }
+
+                         this.isLoading = false;
+
+                    } catch (error) {
+                         console.error('Failed to fetch or process summary stream:', error);
+                         this.errorMessage = `总结过程中出错: ${error.message}`;
+                         this.isLoading = false;
+                         this.summaryContent = '';
+                    }
+                }
+            },
+            mounted() {
+                this.fetchModels();
+                this.handleUrlParam();
+            }
+        });
+    </script>
+</body>
+</html>

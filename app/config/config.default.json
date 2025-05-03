@@ -7,7 +7,7 @@
     },
     "app":{
         "req_limit":100,
-        "word_limit":3000,
+        "word_limit":10000,
         "template_name":"index.html"
     },
     "site":{
