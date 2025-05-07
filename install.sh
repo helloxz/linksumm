@@ -12,8 +12,8 @@ install_python_deps(){
     python3 -m venv venv
     source venv/bin/activate
     pip3 install -r requirements.txt
-    # 安装 Chromium
-    playwright install-deps
+    #只安装 chromium 所需的依赖（而不是所有 deps）
+    playwright install-deps chromium
     playwright install chromium
 }
 

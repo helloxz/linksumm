@@ -45,7 +45,6 @@ class Summ:
 
 
     # AI总结接口
-    # 对话接口
     async def chat(self,item:InputItem,request: Request = None):
         # 解析json数据
         model = item.model
@@ -365,6 +364,10 @@ class Summ:
                     return f'![Image]({img_url})'
                 
                 extracted = re.sub(r'!\[Image\]\(([^)]+)\)', replace_relative_url, extracted)
+
+            # 替换v2ex中不需要的内容
+            to_remove = "**V2EX = way to explore**V2EX 是一个关于分享和探索的地方\n\n"
+            extracted = extracted.replace(to_remove, "")
             
             # 构建返回结果
             result = {
@@ -408,3 +411,29 @@ class Summ:
                 "name": model["name"]
             })
         return show_json(200, "success", newModelList)
+    
+    # 获取html内容，然后提取为markdown内容
+        # 获取html内容，然后提取为markdown内容
+    async def html_to_md(
+        self,
+        html: str = Form(...),
+        url: str = Form(default="https://example.com")  # 提供默认值，因为_extract_with_trafilatura需要url参数
+    ):
+        try:
+            # 检查HTML是否为空
+            if not html or len(html.strip()) == 0:
+                return show_json(400, "HTML content cannot be empty", None)
+            
+            # 简单验证是否是HTML内容
+            # 检查是否包含基本HTML标签
+            if not re.search(r'<\s*html.*?>|<\s*body.*?>|<.*?>', html, re.IGNORECASE):
+                return show_json(400, "Invalid HTML format", None)
+            
+            # 提取内容
+            result = await self._extract_with_trafilatura(html, url)
+            
+            return show_json(200, "Content extracted successfully", result)
+            
+        except Exception as e:
+            return show_json(500, f"Error processing HTML: {str(e)}", None)
+
