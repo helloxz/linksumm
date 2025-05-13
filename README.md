@@ -12,6 +12,7 @@ LinkSumm是一款使用AI大模型驱动的智能摘要提取器，您可以输�
 * [x] 支持限制IP请求频率
 * [x] 支持限制总结的字符串长度
 * [x] 支持请求SPA应用
+* [x] 支持浏览器扩展（ [Chrome](https://chromewebstore.google.com/detail/linksumm/hecebmomkkjlpdhcbeiokoifoagfojdc) | [Firefox](https://addons.mozilla.org/zh-CN/firefox/addon/linksumm/) ）
 * [ ] 根据URL内容继续对话
 * [ ] 内容缓存
 * [ ] PWA支持
