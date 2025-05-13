@@ -7,13 +7,23 @@
     <meta name="description" content="LinkSumm可以帮助您将网页内容进行总结，提取出重要信息。">
     <meta name="keywords" content="LinkSumm, AI总结, AI提取, 网页总结, 内容提取">
     <link rel="stylesheet" href="/static/element-ui/index.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+    <link rel="icon" href="/static/icons/linksumm-icon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=20250513">
     <script defer src="https://tj.rss.ink/script.js" data-website-id="fc376c34-e38d-4d45-bf03-f369a2298782"></script>
 </head>
 <body>
     <div id="app">
+
+        <!-- 浏览器扩展提示 -->
+        <div class="browser" v-if="browserIcon !== 'unknown'">
+            <a :href="extentionURL" rel="nofollow" target="_blank" class="extension-prompt">
+                <img :src="browserIcon" alt="Browser Icon" class="browser-icon">
+              <span>安装扩展</span>
+            </a>
+          </div>
+        <!-- 浏览器扩展提示END -->
+
         <div class="header">
              <h1><span class="icon">🔗</span> LinkSumm</h1>
              <p>输入一个URL地址，让AI为您总结内容</p>
@@ -119,7 +129,9 @@
                     originalContent: '', // Store original fetched content if needed
                     summaryContent: '', // Raw summary stream
                     errorMessage: '',
-                    outputContent:""// 输出内容
+                    outputContent:"",// 输出内容
+                    browserIcon:"",
+                    extentionURL:"https://chromewebstore.google.com/detail/linksumm/hecebmomkkjlpdhcbeiokoifoagfojdc"
                 }
             },
             computed: {
@@ -139,6 +151,25 @@
                 }
             },
             methods: {
+                // 获取浏览器UA，从而改变浏览器图标
+                getBrowserIcon() {
+                    const userAgent = navigator.userAgent;
+                    if (userAgent.includes('Edg')) {
+                        this.browserIcon = '/static/icons/edge.png';
+                        this.extentionURL = "https://chromewebstore.google.com/detail/linksumm/hecebmomkkjlpdhcbeiokoifoagfojdc";
+                    }
+                    else if (userAgent.includes('Chrome')) {
+                        this.browserIcon = '/static/icons/chrome.png';
+                        this.extentionURL = "https://chromewebstore.google.com/detail/linksumm/hecebmomkkjlpdhcbeiokoifoagfojdc";
+                    } else if (userAgent.includes('Firefox')) {
+                        this.browserIcon = '/static/icons/firefox.png';
+                        this.extentionURL = "https://addons.mozilla.org/zh-CN/firefox/addon/linksumm/";
+                    }
+                    else {
+                        this.browserIcon = 'unknown';
+                        this.extentionURL = "";
+                    }
+                },
                 handleUrlParam() {
                     // 1. 获取地址栏上的?url=参数值
                     const queryString = window.location.search;
@@ -327,6 +358,7 @@
                 }
             },
             mounted() {
+                this.getBrowserIcon();
                 this.fetchModels();
                 this.handleUrlParam();
             }
